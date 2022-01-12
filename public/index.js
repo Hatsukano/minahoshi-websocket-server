@@ -56,3 +56,7 @@ socket.on('pong_from_server', () => {
   if (time) time.append(+new Date(), latency);
   setTimeout(send, 100);
 });
+
+socket.on('new_msg', (e) => {
+  console.log('new_msg',e)
+});

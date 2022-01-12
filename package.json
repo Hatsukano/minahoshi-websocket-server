@@ -2,12 +2,15 @@
   "name": "socketio-examples",
   "version": "0.1.0",
   "dependencies": {
+    "body-parser": "^1.19.1",
     "dayjs": "^1.10.7",
     "express": "^4.17.1",
+    "express-formidable": "^1.2.0",
     "file-stream-rotator": "^0.5.7",
     "morgan": "^1.10.0",
     "smoothie": "1.19.0",
     "socket.io": "^3.0.3",
-    "socket.io-client": "^3.0.3"
+    "socket.io-client": "^3.0.3",
+    "uuid": "^8.3.2"
   }
 }
