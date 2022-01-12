@@ -7,7 +7,7 @@ let time;
 let app;
 
 function render() {
-  if (smoothie) smoothie.stop();
+  if (smoothie && smoothie.stop) smoothie.stop();
   $('chart').width = document.body.clientWidth;
   smoothie = new SmoothieChart();
   smoothie.streamTo($('chart'), 1000);
@@ -47,16 +47,17 @@ socket.on('connect', () => {
   getList();
   let str = {
     // 测试
-    uid: 'admin',
-    project_id: 'admin'
+    uid: 'admin' + `${new Date().getTime()}`.substring(0,3),
+    project_id: '管理员'
   };
   socket.emit('login', str)
 });
 
 socket.on('disconnect', () => {
-  if (smoothie) smoothie.stop();
+  console.log('disconnected')
+  if (smoothie && smoothie.stop) smoothie.stop();
   $('transport').innerHTML = '(disconnected)';
-});
+}); 
 
 socket.on('pong_from_server', () => {
   const latency = new Date() - last;
