@@ -20,7 +20,10 @@ function render() {
 }
 
 // socket
-const socket = io();
+if(window.socket){
+  window.socket.disconnect()
+}
+window.socket = io();
 let last;
 console.log('send')
 function send() {
@@ -44,8 +47,8 @@ socket.on('connect', () => {
   getList();
   let str = {
     // 测试
-    uid: 123,
-    project_id: 1
+    uid: 'admin',
+    project_id: 'admin'
   };
   socket.emit('login', str)
 });

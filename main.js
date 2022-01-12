@@ -76,7 +76,12 @@ io.on('connection', socket => {
   socket.on('disconnect', () => {
     let user = findKey(onlineList, socket.id)
     console.log(`<<用户已离线>> ${user}`);
-    delete onlineList[socket.id]
+    delete onlineList[user]
+  });
+  socket.on('connect_error', () => {
+    let user = findKey(onlineList, socket.id)
+    console.log(`<<用户已离线>> ${user}`);
+    delete onlineList[user]
   });
 });
 
@@ -86,16 +91,27 @@ app.post("/", (req, res, next) => {
   let uuid = uuidv4();
   console.log("<<新的发送消息请求>>", uuid)
   let data = req.fields
-  if(Object.keys(data) == 0){
+  if (Object.keys(data) == 0) {
     res.json({
       "code": 2,
       "msg": `消息[${uuid}]发送结果：data解析错误`,
-      "decodedData":data
+      "decodedData": data
     })
   }
   let user = onlineList[`${data.project_id}_${data.receive_uid}`]
   if (user) {
-    io.to(onlineList[`${data.project_id}_${data.receive_uid}`]).emit("new_msg", data.content)
+    io.to(onlineList[`${data.project_id}_${data.receive_uid}`]).emit("new_msg", data.content, (err) => {
+      if (err) {
+        var end = new Date();
+        var cost = end - begin;
+        res.json({
+          "code": 2,
+          "cost": `${cost}ms`,
+          "msg": `消息[${uuid}]发送结果：发送超时`
+        })
+        return
+      }
+    })
     console.log(`消息[${uuid}]发送结果：成功`)
     var end = new Date();
     var cost = end - begin;
@@ -116,6 +132,13 @@ app.post("/", (req, res, next) => {
   }
 })
 
+app.get("/onlineList", (req, res) => {
+  res.json({
+    code: 1,
+    data: onlineList,
+    msg: "获取在线用户列表"
+  })
+})
 http.listen(port, () => console.log(`<<Socket服务运行>> http://localhost:${port}`));
 
 
