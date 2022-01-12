@@ -13,7 +13,7 @@ const formidable = require('express-formidable')
 const port = process.env.PORT || 5002;
 const http = require('http').createServer(app);
 const sio = require('socket.io');
-
+var socket;
 const { v4: uuidv4 } = require('uuid');
 // 集群
 const cluster = require('cluster')
@@ -42,22 +42,18 @@ console.error = function () {
 let logDirectory = __dirname + '/logs';
 //确保日志文件目录存在 没有则创建
 fs.existsSync(logDirectory) || fs.mkdirSync(logDirectory);
-
 //创建一个写路由
 let accessLogStream = FileStreamRotator.getStream({
   filename: logDirectory + '/accss-%DATE%.log',
   frequency: 'daily',
   verbose: false
 })
-
 app.use(logger('combined', { stream: accessLogStream }));//写入日志文件
 app.use(express.static(__dirname + '/public'));
 app.use(formidable());  // 中间件
+app.locals.onlineList = {}
 
-let onlineList = {}
 
-
-// API发送信息接口
 app.post("/", (req, res, next) => {
   let begin = new Date();
   let uuid = uuidv4();
@@ -70,20 +66,9 @@ app.post("/", (req, res, next) => {
       "decodedData": data
     })
   }
-  let user = onlineList[`${data.project_id}_${data.receive_uid}`]
+  let user = req.app.locals.onlineList[`${data.project_id}_${data.receive_uid}`]
   if (user) {
-    io.to(onlineList[`${data.project_id}_${data.receive_uid}`]).emit("new_msg", data.content, (err) => {
-      if (err) {
-        let end = new Date();
-        let cost = end - begin;
-        res.json({
-          "code": 2,
-          "cost": `${cost}ms`,
-          "msg": `消息[${uuid}]发送结果：发送超时`
-        })
-        return
-      }
-    })
+    socket.to(req.app.locals.onlineList[`${data.project_id}_${data.receive_uid}`]).emit("new_msg", data.content)
     console.log(`消息[${uuid}]发送结果：成功`)
     let end = new Date();
     let cost = end - begin;
@@ -99,7 +84,8 @@ app.post("/", (req, res, next) => {
     res.json({
       "code": 2,
       "cost": `${cost}ms`,
-      "msg": `消息[${uuid}]发送结果：未查询到用户[${[`${data.project_id}_${data.receive_uid}`]}]`
+      "msg": `消息[${uuid}]发送结果：未查询到用户[${[`${data.project_id}_${data.receive_uid}`]}]`,
+      "onLine": req.app.locals.onlineList
     })
   }
 })
@@ -107,10 +93,11 @@ app.post("/", (req, res, next) => {
 app.get("/onlineList", (req, res) => {
   res.json({
     code: 1,
-    data: onlineList,
+    data: app.locals.onlineList,
     msg: "获取在线用户列表"
   })
 })
+
 
 // 监听
 // http.listen(port, () => console.log(`<<Socket服务运行>> http://localhost:${port}`));
@@ -140,6 +127,7 @@ if (cluster.isMaster) {
 
     return Number(s) % len;
   };
+  
   let server = net.createServer({ pauseOnConnect: true }, function (connection) {
     let worker = workers[worker_index(connection.remoteAddress, num_processes)];
     worker.send('sticky-session:connection', connection);
@@ -148,12 +136,15 @@ if (cluster.isMaster) {
   // handshake server.
   let server = app.listen(0, () => console.log(`<<Socket服务运行[pid:${process.pid}]>> http://localhost:${port}`)),
     io = sio(server);
+    socket = io;
+  // API发送信息接口
+
   io.on('connection', socket => {
     socket.on('ping_from_client', () => {
       socket.emit('pong_from_server');
     });
     socket.on('getOnlineList', () => {
-      socket.emit('receiveOnlineList', onlineList);
+      socket.emit('receiveOnlineList', app.locals.onlineList);
     });
     socket.on('login', (data) => {
       if (!data.project_id || !data.uid) {
@@ -161,19 +152,19 @@ if (cluster.isMaster) {
         socket.emit('loginFail!');
       } else {
         console.log('<<用户登录成功>>', `${data.project_id}_${data.uid}:${socket.id}`)
-        onlineList[`${data.project_id}_${data.uid}`] = socket.id
-        console.log('<<在线人数更新>>', onlineList)
+        app.locals.onlineList[`${data.project_id}_${data.uid}`] = socket.id
+        console.log('<<在线人数更新>>', app.locals.onlineList)
       }
     });
     socket.on('disconnect', () => {
-      let user = findKey(onlineList, socket.id)
+      let user = findKey(app.locals.onlineList, socket.id)
       console.log(`<<用户已离线>> ${user}`);
-      delete onlineList[user]
+      delete app.locals.onlineList[user]
     });
     socket.on('connect_error', () => {
       let user = findKey(onlineList, socket.id)
       console.log(`<<用户已离线>> ${user}`);
-      delete onlineList[user]
+      delete app.locals.onlineList[user]
     });
   });
   process.on('message', function (message, connection) {
@@ -183,7 +174,6 @@ if (cluster.isMaster) {
     server.emit('connection', connection);
     connection.resume();
   });
-
 }
 
 // other functions
