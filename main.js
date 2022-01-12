@@ -146,7 +146,7 @@ if (cluster.isMaster) {
   }).listen(port);
 } else {
   // handshake server.
-  let server = app.listen(0, () => console.log(`<<Socket服务运行>> http://localhost:${port}`)),
+  let server = app.listen(0, () => console.log(`<<Socket服务运行[pid:${process.pid}]>> http://localhost:${port}`)),
     io = sio(server);
   io.on('connection', socket => {
     socket.on('ping_from_client', () => {
