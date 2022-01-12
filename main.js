@@ -100,81 +100,89 @@ app.get("/onlineList", (req, res) => {
 
 
 // 监听
-// http.listen(port, () => console.log(`<<Socket服务运行>> http://localhost:${port}`));
+// let server = app.listen(0, () => console.log(`<<Socket服务运行[pid:${process.pid}]>> http://localhost:${port}`))
 
+// API发送信息接口
+
+
+
+process.on('message', function (message, connection) {
+  if (message !== 'sticky-session:connection') {
+    return;
+  }
+  server.emit('connection', connection);
+  connection.resume();
+});
+http.listen(port, () => console.log(`<<Socket服务运行>> http://localhost:${port}`));
+let io = sio(http, {
+  cors: {
+    origin: true,
+    credentials: true
+  }
+});
+socket = io;
+io.on('connection', socket => {
+  socket.on('ping_from_client', () => {
+    socket.emit('pong_from_server');
+  });
+  socket.on('getOnlineList', () => {
+    socket.emit('receiveOnlineList', app.locals.onlineList);
+  });
+  socket.on('login', (data) => {
+    if (!data.project_id || !data.uid) {
+      console.log(`<<失败的登录>> ${socket.id}`)
+      socket.emit('loginFail!');
+    } else {
+      console.log('<<用户登录成功>>', `${data.project_id}_${data.uid}:${socket.id}`)
+      app.locals.onlineList[`${data.project_id}_${data.uid}`] = socket.id
+      console.log('<<在线人数更新>>', app.locals.onlineList)
+    }
+  });
+  socket.on('disconnect', () => {
+    let user = findKey(app.locals.onlineList, socket.id)
+    console.log(`<<用户已离线>> ${user}`);
+    delete app.locals.onlineList[user]
+  });
+  socket.on('connect_error', () => {
+    let user = findKey(onlineList, socket.id)
+    console.log(`<<用户已离线>> ${user}`);
+    delete app.locals.onlineList[user]
+  });
+});
 let num_processes = require('os').cpus().length;
 
-if (cluster.isMaster) {
-  let workers = [];
-  let spawn = function (i) {
-    workers[i] = cluster.fork();
-    workers[i].on('exit', function (code, signal) {
-      console.log('respawning worker', i);
-      spawn(i);
-    });
-  };
-  for (let i = 0; i < num_processes; i++) {
-    spawn(i);
-  }
-  // ip hash
-  let worker_index = function (ip, len) {
-    let s = '';
-    for (let i = 0, _len = ip.length; i < _len; i++) {
-      if (!isNaN(ip[i])) {
-        s += ip[i];
-      }
-    }
+// if (cluster.isMaster) {
+//   let workers = [];
+//   let spawn = function (i) {
+//     workers[i] = cluster.fork();
+//     workers[i].on('exit', function (code, signal) {
+//       console.log('respawning worker', i);
+//       spawn(i);
+//     });
+//   };
+//   for (let i = 0; i < num_processes; i++) {
+//     spawn(i);
+//   }
+//   // ip hash
+//   let worker_index = function (ip, len) {
+//     let s = '';
+//     for (let i = 0, _len = ip.length; i < _len; i++) {
+//       if (!isNaN(ip[i])) {
+//         s += ip[i];
+//       }
+//     }
 
-    return Number(s) % len;
-  };
-  
-  let server = net.createServer({ pauseOnConnect: true }, function (connection) {
-    let worker = workers[worker_index(connection.remoteAddress, num_processes)];
-    worker.send('sticky-session:connection', connection);
-  }).listen(port);
-} else {
-  // handshake server.
-  let server = app.listen(0, () => console.log(`<<Socket服务运行[pid:${process.pid}]>> http://localhost:${port}`)),
-    io = sio(server);
-    socket = io;
-  // API发送信息接口
+//     return Number(s) % len;
+//   };
 
-  io.on('connection', socket => {
-    socket.on('ping_from_client', () => {
-      socket.emit('pong_from_server');
-    });
-    socket.on('getOnlineList', () => {
-      socket.emit('receiveOnlineList', app.locals.onlineList);
-    });
-    socket.on('login', (data) => {
-      if (!data.project_id || !data.uid) {
-        console.log(`<<失败的登录>> ${socket.id}`)
-        socket.emit('loginFail!');
-      } else {
-        console.log('<<用户登录成功>>', `${data.project_id}_${data.uid}:${socket.id}`)
-        app.locals.onlineList[`${data.project_id}_${data.uid}`] = socket.id
-        console.log('<<在线人数更新>>', app.locals.onlineList)
-      }
-    });
-    socket.on('disconnect', () => {
-      let user = findKey(app.locals.onlineList, socket.id)
-      console.log(`<<用户已离线>> ${user}`);
-      delete app.locals.onlineList[user]
-    });
-    socket.on('connect_error', () => {
-      let user = findKey(onlineList, socket.id)
-      console.log(`<<用户已离线>> ${user}`);
-      delete app.locals.onlineList[user]
-    });
-  });
-  process.on('message', function (message, connection) {
-    if (message !== 'sticky-session:connection') {
-      return;
-    }
-    server.emit('connection', connection);
-    connection.resume();
-  });
-}
+//   let server = net.createServer({ pauseOnConnect: true }, function (connection) {
+//     let worker = workers[worker_index(connection.remoteAddress, num_processes)];
+//     worker.send('sticky-session:connection', connection);
+//   }).listen(port);
+// } else {
+//   // handshake server.
+
+// }
 
 // other functions
 function findKey(obj, value, compare = (a, b) => a === b) {
