@@ -1,4 +1,9 @@
 # minahoshi-websocket-server
 
 启动步骤
-npm i >> node main
+
+使用NPM安装依赖包后，运行main
+
+访问 http://localhost:5002
+
+
