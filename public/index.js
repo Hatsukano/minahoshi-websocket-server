@@ -1,11 +1,12 @@
 // helper
-function $ (id) { return document.getElementById(id); }
+function $(id) { return document.getElementById(id); }
 
 // chart
 let smoothie;
 let time;
+let app;
 
-function render () {
+function render() {
   if (smoothie) smoothie.stop();
   $('chart').width = document.body.clientWidth;
   smoothie = new SmoothieChart();
@@ -22,11 +23,14 @@ function render () {
 const socket = io();
 let last;
 console.log('send')
-function send () {
+function send() {
   last = new Date();
-  console.log('send')
   socket.emit('ping_from_client');
   $('transport').innerHTML = socket.io.engine.transport.name;
+}
+
+function getList() {
+  socket.emit('getOnlineList');
 }
 
 
@@ -37,12 +41,13 @@ socket.on('connect', () => {
     window.onresize = render;
   }
   send();
+  getList();
   let str = {
     // 测试
     uid: 123,
     project_id: 1
   };
-  socket.emit('login',str)
+  socket.emit('login', str)
 });
 
 socket.on('disconnect', () => {
@@ -57,6 +62,43 @@ socket.on('pong_from_server', () => {
   setTimeout(send, 100);
 });
 
-socket.on('new_msg', (e) => {
-  console.log('new_msg',e)
+socket.on('receiveOnlineList', (list) => {
+  let arr = []
+  Object.keys(list).forEach(key => {
+    arr.push(
+      {
+        project_id: key.split("_")[0],
+        user_id: key.split("_")[1],
+        socket_id: list[key]
+      }
+    )
+  })
+  app.onLine = arr
+  setTimeout(getList, 1000);
 });
+
+socket.on('new_msg', (e) => {
+  console.log('new_msg', e)
+});
+
+// vue
+window.onload = function () {
+  app = new Vue({
+    el: "#app",
+    data() {
+      return {
+        onLine: []
+      }
+    },
+    methods: {
+
+    },
+    mounted() {
+
+    },
+    created() {
+
+    }
+  })
+}
+

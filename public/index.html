@@ -1,16 +1,35 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
   <head>
     <title>Socket.IO Latency</title>
     <link rel="stylesheet" href="/style.css" />
-    <!-- <script src='/socket.io.js'></script> -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    <script src="/socket.io.js"></script>
     <script src="/smoothie.js"></script>
+    <!-- 引入样式 -->
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/element-ui/lib/theme-chalk/index.css"
+    />
+    <!-- 引入组件库 -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
   </head>
   <body>
-    <h1>Socket.IO Latency <span id="latency"></span></h1>
-    <h2 id="transport">(connecting)</h2>
-    <canvas id="chart" height="200"></canvas>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/3.0.3/socket.io.js"></script>
-    <script src="/index.js"></script>   
+    <script src="/index.js"></script>
+    <div id="app">
+      <h1>Socket.IO Latency <span id="latency"></span></h1>
+      <h2 id="transport">(connecting)</h2>
+      <canvas id="chart" height="200"></canvas>
+      <div class="socketlist">
+        <el-tag type="success" style="margin-top: 20px;margin-bottom:10px;">SOCKET在线用户列表</el-tag>
+        <el-table :data="onLine" stripe style="width: 100%">
+          <el-table-column prop="project_id" label="项目ID" width="180">
+          </el-table-column>
+          <el-table-column prop="user_id" label="用户ID" width="180">
+          </el-table-column>
+          <el-table-column prop="socket_id" label="SOCKET ID"> </el-table-column>
+        </el-table>
+      </div>
+    </div>
   </body>
 </html>
