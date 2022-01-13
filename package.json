@@ -2,6 +2,8 @@
   "name": "socketio-examples",
   "version": "0.1.0",
   "dependencies": {
+    "@socket.io/redis-adapter": "^7.1.0",
+    "@socket.io/redis-emitter": "^4.1.1",
     "artillery": "^2.0.0-10",
     "artillery-engine-socketio-v3": "^1.1.2",
     "body-parser": "^1.19.1",
@@ -9,13 +11,16 @@
     "dayjs": "^1.10.7",
     "express": "^4.17.1",
     "express-formidable": "^1.2.0",
+    "farmhash": "^3.2.2",
     "file-stream-rotator": "^0.5.7",
     "morgan": "^1.10.0",
     "net": "^1.0.2",
     "os": "^0.1.2",
+    "redis": "^4.0.2",
     "smoothie": "1.19.0",
     "socket.io": "^3.0.3",
     "socket.io-client": "^3.0.3",
+    "socket.io-redis": "^6.1.1",
     "uuid": "^8.3.2"
   }
 }

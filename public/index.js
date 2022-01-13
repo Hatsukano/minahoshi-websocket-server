@@ -23,7 +23,7 @@ function render() {
 if(window.socket){
   window.socket.disconnect()
 }
-window.socket = io("http://localhost:5002");
+window.socket = io.connect("http://localhost:8181");
 let last;
 console.log('send')
 function send() {
@@ -59,7 +59,8 @@ socket.on('disconnect', () => {
   $('transport').innerHTML = '(disconnected)';
 }); 
 
-socket.on('pong_from_server', () => {
+socket.on('pong_from_server', (e) => {
+  console.log('pong_from_server',e)
   const latency = new Date() - last;
   $('latency').innerHTML = latency + 'ms';
   if (time) time.append(+new Date(), latency);
