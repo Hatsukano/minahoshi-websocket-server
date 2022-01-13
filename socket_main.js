@@ -3,7 +3,6 @@
 // const Machine = require("./models/Machine");
 
 const socket_main = (io, socket) => {
-
     socket.on('ping_from_client', () => {
         socket.emit('pong_from_server','ok');
     });
@@ -14,8 +13,6 @@ const socket_main = (io, socket) => {
             socket.emit('loginFail!',data.content);
         }
     });
-
-
 };
 
 
