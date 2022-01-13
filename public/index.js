@@ -23,7 +23,7 @@ function render() {
 if(window.socket){
   window.socket.disconnect()
 }
-window.socket = io();
+window.socket = io("http://139.199.222.8:5002");
 let last;
 console.log('send')
 function send() {
