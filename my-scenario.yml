@@ -3,7 +3,7 @@ config:
   target: "http://localhost:8181"
   phases:
     - duration: 60
-      arrivalRate: 200
+      arrivalRate: 300
       name: Sustained load
   engines:
    socketio-v3: {}

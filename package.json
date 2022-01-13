@@ -1,7 +1,11 @@
 {
   "name": "socketio-examples",
   "version": "0.1.0",
+  "scripts": {
+    "start": "node ./app.js --nouse-idle-notification--expose-gc--max-new-space-size=2048--max-old-space-size=8192 "
+  },
   "dependencies": {
+    "@socket.io/admin-ui": "^0.2.0",
     "@socket.io/cluster-adapter": "^0.1.0",
     "@socket.io/redis-adapter": "^7.1.0",
     "@socket.io/redis-emitter": "^4.1.1",

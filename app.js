@@ -7,7 +7,9 @@ const { Server } = require("socket.io");
 const socket_main = require("./socket_main");
 const numCPUs = require("os").cpus().length;
 const { setupMaster, setupWorker } = require("@socket.io/sticky");
-const { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
+var { createAdapter, setupPrimary } = require("@socket.io/cluster-adapter");
+const { createClient } = require("redis");
+const { instrument, RedisStore } = require("@socket.io/admin-ui");
 // const expressMain = require('./expressMain');
 const port = 8181;
 // Brew breaks for me more than it solves a problem, so I
@@ -49,12 +51,15 @@ if (cluster.isMaster) {
 	// Don't expose our internal server to the outside world.
 	// const server = app.listen(0, "localhost");
 	const httpServer = http.createServer();
-	const io = new Server(httpServer,{
+	const io = new Server(httpServer, {
 		cors: {
 			origin: "*",
-		},
+			credentials: false
+		}
 	});
 
+
+	const server = httpServer.listen(0, "localhost")
 	console.log(`Worker ${process.pid} started`);
 	// const io = socketio(server, {
 	// 	cors: {
@@ -65,15 +70,25 @@ if (cluster.isMaster) {
 	// server is assumed to be on localhost:6379. You don't have to
 	// specify them explicitly unless you want to change them.
 	// redis-cli monitor
-	io.adapter(io_redis({ host: "localhost", port: 6379 }));
 	io.adapter(createAdapter());
+	// var { createAdapter } = require("@socket.io/redis-adapter");
+	const pubClient = createClient({ url: "redis://localhost:6379" });
+	const subClient = pubClient.duplicate();
+	io.adapter(createAdapter(pubClient, subClient));
+	instrument(io, {
+		auth: false,
+		store: new RedisStore(pubClient)
+	});
+	io.on("connection", function (socket) {
+		socket_main(io, socket);
+		// console.log(`connected to worker: ${cluster.worker.id}`);
+	});
+	// io.adapter(io_redis({ host: "localhost", port: 6379 }));
 	setupWorker(io);
 	// Here you might use Socket.IO middleware for authorization etc.
 	// on connection, send the socket over to our module with socket stuff
-	io.on("connection", function (socket) {
-		socket_main(io, socket);
-		console.log(`connected to worker: ${cluster.worker.id}`);
-	});
+
+
 	// Listen to messages sent from the master. Ignore everything else.
 	process.on("message", function (message, connection) {
 		if (message !== "sticky-session:connection") {
