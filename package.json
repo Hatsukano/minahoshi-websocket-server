@@ -2,8 +2,10 @@
   "name": "socketio-examples",
   "version": "0.1.0",
   "dependencies": {
+    "@socket.io/cluster-adapter": "^0.1.0",
     "@socket.io/redis-adapter": "^7.1.0",
     "@socket.io/redis-emitter": "^4.1.1",
+    "@socket.io/sticky": "^1.0.1",
     "artillery": "^2.0.0-10",
     "artillery-engine-socketio-v3": "^1.1.2",
     "body-parser": "^1.19.1",
