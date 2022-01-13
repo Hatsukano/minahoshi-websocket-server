@@ -1,6 +1,6 @@
 # my-scenario.yml
 config:
-  target: "http://139.199.222.8:5002"
+  target: "http://localhost:5002"
   phases:
     - duration: 60
       arrivalRate: 50

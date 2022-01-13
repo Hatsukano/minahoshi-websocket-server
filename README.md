@@ -6,4 +6,5 @@
 
 访问 http://localhost:5002
 
-
+并发测试
+npx artillery run my-scenario.yml
